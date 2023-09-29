@@ -4,12 +4,12 @@
   "version": "1.0.0-beta.0",
   "private": true,
   "main": "dist/index.js",
-  "repository": "github:ookamiiixd/baileys-api",
-  "author": "Royhan (https://github.com/ookamiiixd)",
+  "repository": "github:thiagomorello/baileys-whatsapp-api",
+  "author": "Thiago Roieski Maltezo (https://github.com/thiagomorello)",
   "bugs": {
-    "url": "https://github.com/ookamiiixd/baileys-api/issues"
+    "url": "https://github.com/thiagomorello/baileys-whatsapp-api/issues"
   },
-  "homepage": "https://github.com/ookamiiixd/baileys-api#readme",
+  "homepage": "https://github.com/thiagomorello/baileys-whatsapp-api#readme",
   "license": "MIT",
   "scripts": {
     "start": "node .",
