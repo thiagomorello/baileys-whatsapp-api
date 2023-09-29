@@ -151,6 +151,7 @@ export async function createSession(options: createSessionOptions) {
     auth: {
       creds: state.creds,
       
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
       keys: makeCacheableSignalKeyStore(//@ts-ignore
        state.keys, logger),
     },
