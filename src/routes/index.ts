@@ -6,7 +6,6 @@ import messageRoutes from './messages';
 import sessionRoutes from './sessions';
 
 const router = Router();
-router.use('/', (req, res) => res.status(200).json({ message: 'API is running' }));
 router.use('/sessions', sessionRoutes);
 router.use('/:sessionId/chats', chatRoutes);
 router.use('/:sessionId/contacts', contactRoutes);
