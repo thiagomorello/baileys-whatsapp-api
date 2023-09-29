@@ -1,12 +1,12 @@
-import type { ConnectionState, proto, SocketConfig, WASocket } from '@adiwajshing/baileys';
+import type { ConnectionState, proto, SocketConfig, WASocket } from '@whiskeysockets/baileys';
 import makeWASocket, {
   Browsers,
   DisconnectReason,
   isJidBroadcast,
   makeCacheableSignalKeyStore,
-} from '@adiwajshing/baileys';
+} from '@whiskeysockets/baileys';
 import type { Boom } from '@hapi/boom';
-import { initStore, Store, useSession } from '@ookamiiixd/baileys-store';
+import { initStore, Store, useSession } from '@thiagomorello/baileys-store';
 import type { Response } from 'express';
 // import { writeFile } from 'fs/promises';
 // import { join } from 'path';

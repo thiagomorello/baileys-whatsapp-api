@@ -1,10 +1,6 @@
-> 🚨 **NOTICE**: `@adiwajshing/baileys` which is this project relied on, has been discontinued. Thus, this project will be archived and stopped receiving updates anymore. Thanks everyone who's been part of this❤️
-
----
-
 # Baileys API
 
-An implementation of [@adiwajshing/Baileys](https://github.com/adiwajshing/Baileys) as a simple REST API with multiple device support
+An implementation of [@whiskeysockets/baileys](https://github.com/WhiskeySockets/Baileys) as a simple REST API with multiple device support
 
 ## Requirements
 
@@ -13,7 +9,7 @@ An implementation of [@adiwajshing/Baileys](https://github.com/adiwajshing/Baile
 
 ## Installation
 
-1. Download or clone this repo. If you want to skip the build step, you can download the prebuilt one (file with the `baileys-api-VERSION.tgz` name pattern) from the release page
+1. Download or clone this repo.
 2. Enter to the project directory
 3. Install the dependencies
 

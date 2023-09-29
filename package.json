@@ -1,6 +1,6 @@
 {
-  "name": "Comprarei WhatsApp API",
-  "description": "Comprarei WhatsApp API",
+  "name": "baileys-whatsapp-api",
+  "description": "Baileys WhatsApp API",
   "version": "1.0.0-beta.0",
   "private": true,
   "main": "dist/index.js",
@@ -15,14 +15,14 @@
     "start": "node .",
     "build": "tsc",
     "lint": "eslint .",
-    "format": "prettier . --write"
+    "format": "prettier . --write",
+    "dev": "ts-node-dev --transpile-only --exit-child --ignore-watch node_modules  src/index.ts"
   },
   "dependencies": {
-    "@adiwajshing/baileys": "^5.0.0",
     "@hapi/boom": "^10.0.0",
-    "@ookamiiixd/baileys-store": "^1.0.0-beta.0",
-    "@prisma/client": "^4.7.1",
+    "@prisma/client": "^5.3.1",
     "@whiskeysockets/baileys": "^6.5.0",
+    "@thiagomorello/baileys-store": "https://github.com/thiagomorello/baileys-store",
     "cors": "^2.8.5",
     "dotenv": "^16.0.3",
     "express": "^4.18.2",
@@ -45,8 +45,9 @@
     "eslint-config-prettier": "^8.5.0",
     "prettier": "^2.8.0",
     "prettier-plugin-organize-imports": "^3.2.1",
-    "prisma": "^4.7.1",
+    "prisma": "^5.3.1",
     "ts-node": "^10.9.1",
+    "ts-node-dev": "^2.0.0",
     "typescript": "^4.9.3"
   },
   "engines": {
