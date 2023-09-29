@@ -41,7 +41,10 @@ export const send: RequestHandler = async (req, res) => {
     const exists = await jidExists(session, jid, type);
     if (!exists) return res.status(400).json({ error: 'JID does not exists' });
 
-    const result = await session.sendMessage(jid, message, options);
+    const newMessage = {
+      text: message,
+    }
+    const result = await session.sendMessage(jid, newMessage, options);
     res.status(200).json(result);
   } catch (e) {
     const message = 'An error occured during message send';
