@@ -40,6 +40,19 @@ export const send: RequestHandler = async (req, res) => {
 
     const exists = await jidExists(session, jid, type);
     if (!exists) return res.status(400).json({ error: 'JID does not exists' });
+
+
+    await session.presenceSubscribe(jid).catch(() => {
+      console.log('Erro ao setar presença')
+    })
+    await session.sendPresenceUpdate('composing', jid).catch(() => {
+      console.log('Erro ao atualizar presença')
+    })
+    const randomDelay = Math.floor(Math.random() * 10000) + 1000
+    await delay(randomDelay)
+    await session.sendPresenceUpdate('paused', jid).catch(() => {
+      console.log('Erro ao atualizar presença para pausado')
+    })
     
     const result = await session.sendMessage(jid, message, options);
     res.status(200).json(result);
@@ -103,3 +116,6 @@ export const download: RequestHandler = async (req, res) => {
     res.status(500).json({ error: message });
   }
 };
+async function delay(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms))
+}
