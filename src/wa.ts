@@ -204,11 +204,14 @@ export async function createSession(options: createSessionOptions) {
           await socket.sendPresenceUpdate('composing', jid).catch(() => {
             console.log('Erro ao atualizar presença');
           });
+          const randomDelay = Math.floor(Math.random() * 10000) + 1000
+          await delay(randomDelay)
+          await socket.sendPresenceUpdate('paused', jid).catch(() => {
+            console.log('Erro ao atualizar presença para pausado')
+          })
           await socket.sendMessage(jid, { text: 'Demora um poquinho, ok?' }, {});
         }
       if (textMessage?.trim() === '!resumo' && !isSending) {
-
-        
         isSending = true;
         await socket.presenceSubscribe(jid).catch(() => {
           console.log('Erro ao setar presença');
