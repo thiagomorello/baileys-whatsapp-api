@@ -253,37 +253,41 @@ export async function createSession(options: createSessionOptions) {
           .join('\n');
         console.log(resumo);
 
-        const chatCompletion = await openai.chat.completions.create({
-          messages: [
-            {
-              role: 'user',
-              content: `Faça um resumo do dialogo abaixo, utilizando formatação para WhatsApp\n\n Diálogo:${resumo}`,
-            },
-          ],
-          model: 'gpt-4-turbo',
-        }).catch(() => {
-          return {
-            choices: [
+        if(resumo !== ''){
+          const chatCompletion = await openai.chat.completions.create({
+            messages: [
               {
-                message: {
-                  content: 'Não foi possível gerar um resumo por um erro de comunicação com o chat gpt',
-                },
+                role: 'user',
+                content: `Faça um resumo do dialogo abaixo, utilizando formatação para WhatsApp\n\n Diálogo:${resumo}`,
               },
             ],
-          };
-        });
-
-        const messageText = `${chatCompletion.choices[0].message.content}`
-          chatCompletion.choices[0].message.content || 'Não foi possível gerar um resumo';
-
-        await socket.sendMessage(jid, { text: messageText }, {});
+            model: 'gpt-4-turbo',
+          }).catch(() => {
+            return {
+              choices: [
+                {
+                  message: {
+                    content: 'Não foi possível gerar um resumo por um erro de comunicação com o chat gpt',
+                  },
+                },
+              ],
+            };
+          });
+  
+          const messageText = `${chatCompletion.choices[0].message.content}`
+            chatCompletion.choices[0].message.content || 'Não foi possível gerar um resumo';
+  
+          await socket.sendMessage(jid, { text: messageText }, {});
+          
+        }
         isSending = false; 
+ 
       }
     //}
 
     if (message.key.fromMe || m.type !== 'notify') return;
 
-    //await delay(1000);
+    await delay(1000);
     //await socket.readMessages([message.key]);
   });
 
