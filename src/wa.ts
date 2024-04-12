@@ -1,3 +1,5 @@
+import type { Boom } from '@hapi/boom';
+import { initStore, Store, useSession } from '@thiagomorello/baileys-store';
 import type { ConnectionState, proto, SocketConfig, WASocket } from '@whiskeysockets/baileys';
 import makeWASocket, {
   Browsers,
@@ -5,15 +7,13 @@ import makeWASocket, {
   isJidBroadcast,
   makeCacheableSignalKeyStore,
 } from '@whiskeysockets/baileys';
-import type { Boom } from '@hapi/boom';
-import { initStore, Store, useSession } from '@thiagomorello/baileys-store';
 import type { Response } from 'express';
 // import { writeFile } from 'fs/promises';
 // import { join } from 'path';
 import { toDataURL } from 'qrcode';
 import type { WebSocket } from 'ws';
 import { logger, prisma } from './shared';
-import { delay } from './utils';
+import { delay, openai } from './utils';
 
 type Session = WASocket & {
   destroy: () => Promise<void>;
@@ -141,6 +141,8 @@ export async function createSession(options: createSessionOptions) {
     res.write(`data: ${JSON.stringify(data)}\n\n`);
   };
 
+  let isSending = false; 
+
   const handleConnectionUpdate = SSE ? handleSSEConnectionUpdate : handleNormalConnectionUpdate;
   const { state, saveCreds } = await useSession(sessionId);
   const socket = makeWASocket({
@@ -150,10 +152,13 @@ export async function createSession(options: createSessionOptions) {
     ...socketConfig,
     auth: {
       creds: state.creds,
-      
+
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      keys: makeCacheableSignalKeyStore(//@ts-ignore
-       state.keys, logger),
+      keys: makeCacheableSignalKeyStore(
+        //@ts-ignore
+        state.keys,
+        logger
+      ),
     },
     logger,
     shouldIgnoreJid: (jid) => isJidBroadcast(jid),
@@ -170,6 +175,7 @@ export async function createSession(options: createSessionOptions) {
 
   socket.ev.on('creds.update', saveCreds);
   socket.ev.on('connection.update', (update) => {
+    console.log(update);
     connectionState = update;
     const { connection } = update;
 
@@ -181,15 +187,102 @@ export async function createSession(options: createSessionOptions) {
     handleConnectionUpdate();
   });
 
-  if (readIncomingMessages) {
-    socket.ev.on('messages.upsert', async (m) => {
-      const message = m.messages[0];
-      if (message.key.fromMe || m.type !== 'notify') return;
+  socket.ev.on('messages.upsert', async (m) => {
+    console.log('chegou mensagem')
+    const message = m.messages[0];
+    console.log(message?.key?.remoteJid)
+    console.log(message?.message)
+    //if (message?.key?.remoteJid === '120363256828117187@g.us') {
+      const jid = message.key.remoteJid ? message.key.remoteJid : '';
 
-      await delay(1000);
-      await socket.readMessages([message.key]);
-    });
-  }
+      const textMessage =
+        message?.message?.extendedTextMessage?.text || message?.message?.conversation;
+        if(textMessage?.trim() === '!resumo' && isSending === true){
+          await socket.presenceSubscribe(jid).catch(() => {
+            console.log('Erro ao setar presença');
+          });
+          await socket.sendPresenceUpdate('composing', jid).catch(() => {
+            console.log('Erro ao atualizar presença');
+          });
+          await socket.sendMessage(jid, { text: 'Demora um poquinho, ok?' }, {});
+        }
+      if (textMessage?.trim() === '!resumo' && !isSending) {
+
+        
+        isSending = true;
+        await socket.presenceSubscribe(jid).catch(() => {
+          console.log('Erro ao setar presença');
+        });
+        await socket.sendPresenceUpdate('composing', jid).catch(() => {
+          console.log('Erro ao atualizar presença');
+        });
+        await socket.sendMessage(jid, { text: 'Gerando resumo... Demora um poquinho, ok?' }, {});
+        const randomDelay = Math.floor(Math.random() * 10000) + 1000;
+        await delay(randomDelay);
+        await socket.sendPresenceUpdate('paused', jid).catch(() => {
+          console.log('Erro ao atualizar presença para pausado');
+        });
+        const messages = await prisma.message.findMany({
+          take: Number(100),
+          where: { sessionId, remoteJid: jid },
+          orderBy: { messageTimestamp: 'asc' },
+        });
+
+        const resumo = messages
+          .map((m: any) => {
+            if(m?.message?.imageMessage?.url){
+              return m?.message?.imageMessage?.caption ? `${m.pushName || m.remoteJid} enviou uma imagem com a legenda: ${m?.message?.imageMessage?.caption}`.trim() : `${m.pushName || m.remoteJid} enviou uma imagem`.trim();
+            }
+            else if (m?.message?.audioMessage?.url) {
+              return `${m.pushName || m.remoteJid} enviou um áudio`.trim();
+            }
+            else if (m?.message?.extendedTextMessage?.text || m?.message?.conversation) {
+              return `${m.pushName || m.remoteJid} disse: ${
+                m?.message?.extendedTextMessage?.text || m?.message?.conversation
+              }`.trim();
+            }
+            else if(m?.message?.reactionMessage?.text !== undefined){
+              return `${m.pushName || m.remoteJid} reagiu com ${m?.message?.reactionMessage?.text}`.trim();
+            }
+            return false;
+          })
+          .filter(Boolean)
+          .join('\n');
+        console.log(resumo);
+
+        const chatCompletion = await openai.chat.completions.create({
+          messages: [
+            {
+              role: 'user',
+              content: `Faça um resumo do dialogo abaixo, utilizando formatação para WhatsApp\n\n Diálogo:${resumo}`,
+            },
+          ],
+          model: 'gpt-4-turbo',
+        }).catch(() => {
+          return {
+            choices: [
+              {
+                message: {
+                  content: 'Não foi possível gerar um resumo por um erro de comunicação com o chat gpt',
+                },
+              },
+            ],
+          };
+        });
+
+        const messageText = `${chatCompletion.choices[0].message.content}`
+          chatCompletion.choices[0].message.content || 'Não foi possível gerar um resumo';
+
+        await socket.sendMessage(jid, { text: messageText }, {});
+        isSending = false; 
+      }
+    //}
+
+    if (message.key.fromMe || m.type !== 'notify') return;
+
+    //await delay(1000);
+    //await socket.readMessages([message.key]);
+  });
 
   // Debug events
   // socket.ev.on('messaging-history.set', (data) => dump('messaging-history.set', data));
