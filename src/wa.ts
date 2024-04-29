@@ -190,11 +190,10 @@ export async function createSession(options: createSessionOptions) {
   socket.ev.on('messages.upsert', async (m) => {
     console.log('chegou mensagem')
     const message = m.messages[0];
-    console.log(message?.key?.remoteJid)
-    console.log(message?.message)
+
     //if (message?.key?.remoteJid === '120363256828117187@g.us') {
       const jid = message.key.remoteJid ? message.key.remoteJid : '';
-
+      console.log(jid, message?.message)
       const textMessage =
         message?.message?.extendedTextMessage?.text || message?.message?.conversation;
         if(textMessage?.trim() === '!resumo' && isSending === true){
@@ -226,10 +225,14 @@ export async function createSession(options: createSessionOptions) {
           console.log('Erro ao atualizar presença para pausado');
         });
         const messages = await prisma.message.findMany({
-          take: Number(100),
+          take: Number(300),
           where: { sessionId, remoteJid: jid },
-          orderBy: { messageTimestamp: 'asc' },
+          orderBy: { messageTimestamp: 'desc' },
+
         });
+        //invertendo a ordem das mensagens
+        messages.reverse();
+
 
         const resumo = messages
           .map((m: any) => {
@@ -247,6 +250,30 @@ export async function createSession(options: createSessionOptions) {
             else if(m?.message?.reactionMessage?.text !== undefined){
               return `${m.pushName || m.remoteJid} reagiu com ${m?.message?.reactionMessage?.text}`.trim();
             }
+            else if(m?.message?.videoMessage?.url){
+              return m?.message?.videoMessage?.caption ? `${m.pushName || m.remoteJid} enviou um vídeo com a legenda: ${m?.message?.videoMessage?.caption}`.trim() : `${m.pushName || m.remoteJid} enviou um vídeo`.trim();
+            }
+            else if(m?.message?.stickerMessage?.url){
+              return `${m.pushName || m.remoteJid} enviou um sticker`.trim();
+            }
+            else if(m?.message?.documentMessage?.url){
+              return `${m.pushName || m.remoteJid} enviou um arquivo`.trim();
+            }
+            else if(m?.message?.contactMessage?.displayName){
+              return `${m.pushName || m.remoteJid} enviou um contato de ${m?.message?.contactMessage?.displayName}`.trim();
+            }
+            else if(m?.message?.locationMessage?.degreesLatitude){
+              return `${m.pushName || m.remoteJid} enviou uma localização`.trim();
+            }
+            else if(m?.message?.liveLocationMessage?.degreesLatitude){
+              return `${m.pushName || m.remoteJid} enviou uma localização ao vivo`.trim();
+            }
+            else if(m?.message?.buttonsResponseMessage?.selectedButtonId){
+              return `${m.pushName || m.remoteJid} selecionou o botão ${m?.message?.buttonsResponseMessage?.selectedButtonId}`.trim();
+            }
+            else if(m?.message?.listResponseMessage?.singleSelectReply?.selectedRowId){
+              return `${m.pushName || m.remoteJid} selecionou a linha ${m?.message?.listResponseMessage?.singleSelectReply?.selectedRowId}`.trim();
+            }
             return false;
           })
           .filter(Boolean)
@@ -258,7 +285,7 @@ export async function createSession(options: createSessionOptions) {
             messages: [
               {
                 role: 'user',
-                content: `Faça um resumo do dialogo abaixo, utilizando formatação para WhatsApp\n\n Diálogo:${resumo}`,
+                content: `Faça um resumo das mensagens abaixo pontuando todos os assuntos para que quem não acompanhou consiga entender o que foi falado\n\n Mensagens:${resumo}`,
               },
             ],
             model: 'gpt-4-turbo',
